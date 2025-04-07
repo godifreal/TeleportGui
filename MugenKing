@@ -1,0 +1,138 @@
+local screenGui = Instance.new("ScreenGui")
+screenGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
+screenGui.Name = "TeleportGUI"
+
+-- Create Main Frame
+local frame = Instance.new("Frame")
+frame.Size = UDim2.new(0, 300, 0, 250)
+frame.Position = UDim2.new(0.5, -150, 0.5, -125)
+frame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+frame.BorderSizePixel = 0
+frame.Visible = false
+frame.Parent = screenGui
+
+-- Create Title Bar
+local titleBar = Instance.new("Frame")
+titleBar.Size = UDim2.new(1, 0, 0, 30)
+titleBar.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+titleBar.BorderSizePixel = 0
+titleBar.Parent = frame
+
+local titleLabel = Instance.new("TextLabel")
+titleLabel.Size = UDim2.new(1, 0, 1, 0)
+titleLabel.BackgroundTransparency = 1
+titleLabel.Text = "Teleport GUI"
+titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+titleLabel.TextSize = 16
+titleLabel.Parent = titleBar
+
+-- Toggle Button
+local toggleButton = Instance.new("TextButton")
+toggleButton.Size = UDim2.new(0, 50, 0, 50)
+toggleButton.Position = UDim2.new(0, 10, 0, 10)
+toggleButton.Text = "Open"
+toggleButton.Parent = screenGui
+
+-- Current Position Display
+local posLabel = Instance.new("TextLabel")
+posLabel.Size = UDim2.new(0, 260, 0, 30)
+posLabel.Position = UDim2.new(0, 20, 0, 40)
+posLabel.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+posLabel.Text = "Current Position: 0, 0, 0"
+posLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+posLabel.Parent = frame
+
+-- Teleport Coordinates Input
+local xInput = Instance.new("TextBox")
+xInput.Size = UDim2.new(0, 80, 0, 30)
+xInput.Position = UDim2.new(0, 20, 0, 80)
+xInput.Text = "X"
+xInput.Parent = frame
+
+local yInput = Instance.new("TextBox")
+yInput.Size = UDim2.new(0, 80, 0, 30)
+yInput.Position = UDim2.new(0, 110, 0, 80)
+yInput.Text = "Y"
+yInput.Parent = frame
+
+local zInput = Instance.new("TextBox")
+zInput.Size = UDim2.new(0, 80, 0, 30)
+zInput.Position = UDim2.new(0, 200, 0, 80)
+zInput.Text = "Z"
+zInput.Parent = frame
+
+-- Teleport Button
+local tpButton = Instance.new("TextButton")
+tpButton.Size = UDim2.new(0, 100, 0, 30)
+tpButton.Position = UDim2.new(0, 20, 0, 120)
+tpButton.Text = "Teleport"
+tpButton.Parent = frame
+
+-- Save Position Button
+local saveButton = Instance.new("TextButton")
+saveButton.Size = UDim2.new(0, 100, 0, 30)
+saveButton.Position = UDim2.new(0, 20, 0, 160)
+saveButton.Text = "Save Position"
+saveButton.Parent = frame
+
+-- Saved Position Display
+local savedPosLabel = Instance.new("TextLabel")
+savedPosLabel.Size = UDim2.new(0, 260, 0, 30)
+savedPosLabel.Position = UDim2.new(0, 20, 0, 200)
+savedPosLabel.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+savedPosLabel.Text = "Saved: None"
+savedPosLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+savedPosLabel.Parent = frame
+
+-- Variables
+local player = game.Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+local savedPosition = nil
+
+-- Toggle GUI Function
+toggleButton.MouseButton1Click:Connect(function()
+    frame.Visible = not frame.Visible
+    toggleButton.Text = frame.Visible and "Close" or "Open"
+end)
+
+-- Update Position Display
+game:GetService("RunService").RenderStepped:Connect(function()
+    if character and character:FindFirstChild("HumanoidRootPart") then
+        local pos = character.HumanoidRootPart.Position
+        posLabel.Text = string.format("Current Position: %.1f, %.1f, %.1f", pos.X, pos.Y, pos.Z)
+    end
+end)
+
+-- Teleport Function
+tpButton.MouseButton1Click:Connect(function()
+    local x = tonumber(xInput.Text)
+    local y = tonumber(yInput.Text)
+    local z = tonumber(zInput.Text)
+    
+    if x and y and z and character and character:FindFirstChild("HumanoidRootPart") then
+        character.HumanoidRootPart.CFrame = CFrame.new(x, y, z)
+    end
+end)
+
+-- Save Position Function
+saveButton.MouseButton1Click:Connect(function()
+    if character and character:FindFirstChild("HumanoidRootPart") then
+        savedPosition = character.HumanoidRootPart.Position
+        savedPosLabel.Text = string.format("Saved: %.1f, %.1f, %.1f", savedPosition.X, savedPosition.Y, savedPosition.Z)
+        
+        -- Copy to clipboard
+        pcall(function()
+            setclipboard(tostring(savedPosition))
+        end)
+        
+        -- Auto-fill inputs with saved position
+        xInput.Text = tostring(math.floor(savedPosition.X))
+        yInput.Text = tostring(math.floor(savedPosition.Y))
+        zInput.Text = tostring(math.floor(savedPosition.Z))
+    end
+end)
+
+-- Update character when respawned
+player.CharacterAdded:Connect(function(newChar)
+    character = newChar
+end)
