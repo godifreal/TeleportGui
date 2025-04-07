@@ -46,19 +46,19 @@ posLabel.Parent = frame
 local xInput = Instance.new("TextBox")
 xInput.Size = UDim2.new(0, 80, 0, 30)
 xInput.Position = UDim2.new(0, 20, 0, 80)
-xInput.Text = "X"
+xInput.Text = "0"
 xInput.Parent = frame
 
 local yInput = Instance.new("TextBox")
 yInput.Size = UDim2.new(0, 80, 0, 30)
 yInput.Position = UDim2.new(0, 110, 0, 80)
-yInput.Text = "Y"
+yInput.Text = "0"
 yInput.Parent = frame
 
 local zInput = Instance.new("TextBox")
 zInput.Size = UDim2.new(0, 80, 0, 30)
 zInput.Position = UDim2.new(0, 200, 0, 80)
-zInput.Text = "Z"
+zInput.Text = "0"
 zInput.Parent = frame
 
 -- Teleport Button
@@ -89,6 +89,11 @@ local player = game.Players.LocalPlayer
 local character = player.Character or player.CharacterAdded:Wait()
 local savedPosition = nil
 
+-- Function to format position
+local function formatPosition(pos)
+    return math.floor(pos.X * 10) / 10, math.floor(pos.Y * 10) / 10, math.floor(pos.Z * 10) / 10
+end
+
 -- Toggle GUI Function
 toggleButton.MouseButton1Click:Connect(function()
     frame.Visible = not frame.Visible
@@ -98,8 +103,8 @@ end)
 -- Update Position Display
 game:GetService("RunService").RenderStepped:Connect(function()
     if character and character:FindFirstChild("HumanoidRootPart") then
-        local pos = character.HumanoidRootPart.Position
-        posLabel.Text = string.format("Current Position: %.1f, %.1f, %.1f", pos.X, pos.Y, pos.Z)
+        local x, y, z = formatPosition(character.HumanoidRootPart.Position)
+        posLabel.Text = string.format("Current Position: %.1f, %.1f, %.1f", x, y, z)
     end
 end)
 
@@ -110,7 +115,10 @@ tpButton.MouseButton1Click:Connect(function()
     local z = tonumber(zInput.Text)
     
     if x and y and z and character and character:FindFirstChild("HumanoidRootPart") then
-        character.HumanoidRootPart.CFrame = CFrame.new(x, y, z)
+        -- Add small offset to Y to prevent falling through floor
+        character.HumanoidRootPart.CFrame = CFrame.new(x, y + 1, z)
+    else
+        warn("Invalid coordinates or character not found!")
     end
 end)
 
@@ -118,21 +126,26 @@ end)
 saveButton.MouseButton1Click:Connect(function()
     if character and character:FindFirstChild("HumanoidRootPart") then
         savedPosition = character.HumanoidRootPart.Position
-        savedPosLabel.Text = string.format("Saved: %.1f, %.1f, %.1f", savedPosition.X, savedPosition.Y, savedPosition.Z)
+        local x, y, z = formatPosition(savedPosition)
+        
+        -- Update display
+        savedPosLabel.Text = string.format("Saved: %.1f, %.1f, %.1f", x, y, z)
         
         -- Copy to clipboard
+        local copyString = string.format("%.1f, %.1f, %.1f", x, y, z)
         pcall(function()
-            setclipboard(tostring(savedPosition))
+            setclipboard(copyString)
         end)
         
-        -- Auto-fill inputs with saved position
-        xInput.Text = tostring(math.floor(savedPosition.X))
-        yInput.Text = tostring(math.floor(savedPosition.Y))
-        zInput.Text = tostring(math.floor(savedPosition.Z))
+        -- Auto-fill inputs
+        xInput.Text = tostring(x)
+        yInput.Text = tostring(y)
+        zInput.Text = tostring(z)
     end
 end)
 
 -- Update character when respawned
 player.CharacterAdded:Connect(function(newChar)
     character = newChar
+    wait(0.1) -- Small delay to ensure character fully loads
 end)
